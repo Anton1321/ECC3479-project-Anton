@@ -2,132 +2,234 @@
 01_clean_data.py — ECC3479 Research Project
 Author: Anton Kozlovsky (36194239)
 
-This script takes the two raw CSV files (vacancy rates and median rents),
-cleans them, merges them into a single suburb-quarter panel, and saves
-the result to data/clean/.
+PURPOSE:
+This script takes the raw Victorian Government rent data (a wide Excel file
+with quarters as columns) and reshapes it into a long, tidy panel dataset
+ready for analysis. It also calculates rent growth and a lagged rent column.
+
+Once vacancy rate data is obtained from SQM Research, the script merges
+that in too.
 
 HOW IT WORKS (step by step):
-1. Reads the raw vacancy rate CSV and the raw rent CSV from data/raw/
-2. Standardises suburb names so they match across both datasets
-3. Converts monthly data into quarterly averages
-4. Merges the two datasets on suburb + quarter
-5. Calculates rent growth (% change from previous quarter)
-6. Creates a lagged vacancy rate column (previous quarter's vacancy)
-7. Saves the final panel to data/clean/suburb_quarter_panel.csv
+1. Reads the VIC rent Excel file ("All properties" sheet)
+2. Parses the messy header rows to extract quarter labels
+3. Keeps only Melbourne suburbs (drops regional VIC and "Group Total" rows)
+4. Reshapes from wide format (one column per quarter) to long format
+   (one row per suburb per quarter)
+5. Calculates quarter-on-quarter rent growth
+6. Creates a lagged rent column (previous quarter's median rent)
+7. If vacancy data exists, merges it in and creates lagged vacancy rate
+8. Saves the final panel to data/clean/suburb_quarter_panel.csv
 """
 
 import pandas as pd
+import os
 
 # ── 1. CONFIGURATION ──────────────────────────────────────────────────
-# Update these filenames to match exactly what you downloaded.
-# The files should be placed inside data/raw/ before running this script.
+# These are the file paths. The rent file should already be in data/raw/.
+# The vacancy file is optional — the script works without it.
 
-VACANCY_FILE = "data/raw/vacancy_rates.csv"
-RENT_FILE = "data/raw/median_rents.csv"
+RENT_FILE = "data/raw/Moving annual median rent by suburb and town - September quarter 2025.xlsx"
+VACANCY_FILE = "data/raw/vacancy_rates.csv"  # Add this file when you have it
 OUTPUT_FILE = "data/clean/suburb_quarter_panel.csv"
 
-# ── 2. LOAD RAW DATA ─────────────────────────────────────────────────
-# pd.read_csv() reads a CSV file into a DataFrame (like a spreadsheet).
-# You may need to adjust column names below to match your actual CSVs.
+# We only want Melbourne metro suburbs, not regional VIC.
+# These are the region names in the Excel file that count as "Melbourne".
+MELBOURNE_REGIONS = [
+    "Inner Melbourne",
+    "Inner Eastern Melbourne",
+    "Southern Melbourne",
+    "Outer Western Melbourne",
+    "North Western Melbourne",
+    "North Eastern Melbourne",
+    "Outer Eastern Melbourne",
+    "South Eastern Melbourne",
+    "Mornington Peninsula",
+]
 
-print("Loading raw data...")
+# We only want data from 2018 onwards (to match our research period).
+START_YEAR = 2018
 
-vacancy_raw = pd.read_csv(VACANCY_FILE)
-rent_raw = pd.read_csv(RENT_FILE)
-
-print(f"  Vacancy data: {vacancy_raw.shape[0]} rows, {vacancy_raw.shape[1]} columns")
-print(f"  Rent data:    {rent_raw.shape[0]} rows, {rent_raw.shape[1]} columns")
-
-# ── 3. STANDARDISE SUBURB NAMES ──────────────────────────────────────
-# Different data sources may spell suburbs differently (e.g. "St Kilda"
-# vs "ST KILDA" vs "St. Kilda"). We convert everything to lowercase and
-# strip extra whitespace so that merging works correctly.
-
-vacancy_raw["suburb"] = vacancy_raw["suburb"].str.strip().str.lower()
-rent_raw["suburb"] = rent_raw["suburb"].str.strip().str.lower()
-
-# ── 4. PARSE DATES AND CREATE QUARTER COLUMN ─────────────────────────
-# We convert the date column to a proper datetime format, then extract
-# the year and quarter. This lets us group monthly data into quarters.
+# ── 2. LOAD THE RAW RENT DATA ────────────────────────────────────────
+# The Excel file has a messy layout:
+#   Row 0: title row
+#   Row 1: quarter labels (e.g. "Mar 2000", "Jun 2000", ...) — each
+#          quarter appears TWICE (once for Count, once for Median)
+#   Row 2: "Count" or "Median" labels
+#   Row 3 onwards: actual data
+#   Column 0: region name (only filled for the first suburb in each region)
+#   Column 1: suburb name
+#   Column 2 onwards: the data values
 #
-# pd.to_datetime() turns text like "2022-03-01" into a date object.
-# .dt.to_period("Q") converts that date into a quarter like "2022Q1".
+# We read with header=None so pandas doesn't misinterpret the messy headers.
 
-vacancy_raw["date"] = pd.to_datetime(vacancy_raw["date"])
-vacancy_raw["quarter"] = vacancy_raw["date"].dt.to_period("Q")
+print("Loading VIC rent data...")
+raw = pd.read_excel(RENT_FILE, sheet_name="All properties", header=None)
+print(f"  Raw file: {raw.shape[0]} rows x {raw.shape[1]} columns")
 
-rent_raw["date"] = pd.to_datetime(rent_raw["date"])
-rent_raw["quarter"] = rent_raw["date"].dt.to_period("Q")
+# ── 3. PARSE THE QUARTER LABELS ─────────────────────────────────────
+# Row 1 has the quarter names (e.g. "Mar 2000") and row 2 says whether
+# that column is "Count" or "Median". We want only the "Median" columns.
+#
+# We loop through columns 2 onwards and build a list of (quarter, type) pairs.
 
-# ── 5. AGGREGATE TO SUBURB-QUARTER LEVEL ─────────────────────────────
-# If your raw data is monthly, we average to get one value per quarter.
-# .groupby() splits the data by suburb + quarter, then .mean() averages
-# the numeric columns within each group.
-# .reset_index() turns the grouped result back into a normal table.
+quarter_labels = raw.iloc[1, 2:]   # e.g. "Mar 2000", "Mar 2000", "Jun 2000", ...
+col_types = raw.iloc[2, 2:]        # e.g. "Count", "Median", "Count", "Median", ...
 
-vacancy_quarterly = (
-    vacancy_raw
-    .groupby(["suburb", "city", "quarter"], as_index=False)["vacancy_rate"]
-    .mean()
-)
+# Find which column indices hold "Median" values
+median_cols = []        # column index in the original DataFrame
+median_quarters = []    # the quarter label for that column
 
-rent_quarterly = (
-    rent_raw
-    .groupby(["suburb", "city", "quarter"], as_index=False)["median_rent"]
-    .mean()
-)
+for i, (quarter, col_type) in enumerate(zip(quarter_labels, col_types)):
+    if col_type == "Median":
+        col_idx = i + 2  # +2 because we skipped columns 0 and 1
+        median_cols.append(col_idx)
+        median_quarters.append(quarter)
 
-print(f"  Vacancy quarterly: {vacancy_quarterly.shape[0]} suburb-quarter rows")
-print(f"  Rent quarterly:    {rent_quarterly.shape[0]} suburb-quarter rows")
+print(f"  Found {len(median_cols)} quarters of median rent data")
+print(f"  Date range: {median_quarters[0]} to {median_quarters[-1]}")
 
-# ── 6. MERGE VACANCY AND RENT DATA ──────────────────────────────────
-# pd.merge() joins two tables together like a VLOOKUP in Excel.
-# We match rows where suburb, city, AND quarter are the same.
-# how="inner" means we only keep rows that appear in BOTH datasets.
+# ── 4. EXTRACT SUBURB DATA ──────────────────────────────────────────
+# Column 0 has the region name, but only on the FIRST row of each region.
+# We use "forward fill" to copy the region name down to all suburbs
+# in that region.
 
-panel = pd.merge(
-    vacancy_quarterly,
-    rent_quarterly,
-    on=["suburb", "city", "quarter"],
-    how="inner",
-)
+data = raw.iloc[3:].copy()  # skip the 3 header rows
+data.columns = range(len(data.columns))  # reset column names to numbers
 
-print(f"  Merged panel: {panel.shape[0]} suburb-quarter observations")
+# Forward-fill the region column (column 0)
+# This means: if a cell is empty, copy the value from the cell above it.
+data[0] = data[0].ffill()
 
-# ── 7. SORT BY SUBURB AND TIME ───────────────────────────────────────
-# Sorting ensures each suburb's data runs in chronological order,
-# which is needed for calculating changes over time in the next step.
+# Rename columns 0 and 1 for clarity
+data = data.rename(columns={0: "region", 1: "suburb"})
 
-panel = panel.sort_values(["suburb", "quarter"]).reset_index(drop=True)
+# ── 5. FILTER TO MELBOURNE SUBURBS ONLY ─────────────────────────────
+# We only keep rows where the region is in our Melbourne list.
+# We also drop "Group Total" rows (these are subtotals, not real suburbs).
 
-# ── 8. CALCULATE RENT GROWTH ────────────────────────────────────────
-# pct_change() calculates the percentage change from the previous row.
-# We multiply by 100 so the result is in percentage points (e.g. 2.5%).
-# groupby("suburb") makes sure we only compare within the same suburb
-# (we don't want to compare the last quarter of one suburb with the
-# first quarter of the next suburb).
+data = data[data["region"].isin(MELBOURNE_REGIONS)]
+data = data[data["suburb"] != "Group Total"]
 
+print(f"  Melbourne suburbs: {data.shape[0]}")
+
+# ── 6. RESHAPE FROM WIDE TO LONG FORMAT ─────────────────────────────
+# Right now each quarter is a separate column (wide format).
+# We want one row per suburb per quarter (long format).
+# Think of it like unpivoting a pivot table in Excel.
+#
+# We'll build a list of small DataFrames (one per quarter) and stack them.
+
+rows = []
+for col_idx, quarter_label in zip(median_cols, median_quarters):
+    # For each quarter, grab the suburb info + that quarter's median rent
+    temp = data[["region", "suburb"]].copy()
+    temp["quarter_label"] = quarter_label
+    temp["median_rent"] = data[col_idx]
+    rows.append(temp)
+
+# pd.concat stacks all the small DataFrames on top of each other
+panel = pd.concat(rows, ignore_index=True)
+
+# ── 7. PARSE QUARTER DATES ──────────────────────────────────────────
+# Convert "Mar 2000" into a proper date so we can filter and sort by time.
+# pd.to_datetime turns text into a date object.
+# .dt.to_period("Q") converts to a quarter period like "2000Q1".
+
+panel["date"] = pd.to_datetime(panel["quarter_label"], format="%b %Y")
+panel["quarter"] = panel["date"].dt.to_period("Q").astype(str)
+panel["year"] = panel["date"].dt.year
+
+# ── 8. FILTER TO 2018 ONWARDS ───────────────────────────────────────
+panel = panel[panel["year"] >= START_YEAR]
+
+# ── 9. CLEAN UP THE MEDIAN RENT VALUES ──────────────────────────────
+# Some cells have "-" meaning too few observations. We replace these
+# with NaN (Not a Number) which means "missing" in pandas.
+# Then we convert to float so we can do math on the column.
+
+panel["median_rent"] = pd.to_numeric(panel["median_rent"], errors="coerce")
+
+# ── 10. SORT AND CALCULATE RENT GROWTH ──────────────────────────────
+# Sort by suburb then date, so each suburb's data runs chronologically.
+panel = panel.sort_values(["suburb", "date"]).reset_index(drop=True)
+
+# pct_change() calculates: (this_quarter - last_quarter) / last_quarter
+# We multiply by 100 to get a percentage (e.g. 2.5 means 2.5% growth).
+# groupby("suburb") ensures we only compare within the same suburb.
 panel["rent_growth"] = (
     panel.groupby("suburb")["median_rent"].pct_change() * 100
 )
 
-# ── 9. CREATE LAGGED VACANCY RATE ───────────────────────────────────
-# shift(1) moves each value down by one row within each suburb group.
-# This gives us "last quarter's vacancy rate" on each row.
-# This is our key explanatory variable: does LAST quarter's vacancy
-# predict THIS quarter's rent change?
+# Also create a lagged rent column (last quarter's rent).
+panel["lag_median_rent"] = panel.groupby("suburb")["median_rent"].shift(1)
 
-panel["lag_vacancy_rate"] = panel.groupby("suburb")["vacancy_rate"].shift(1)
+# ── 11. MERGE VACANCY DATA (if available) ───────────────────────────
+# If you've downloaded vacancy data from SQM Research and saved it as
+# a CSV, this section merges it into the panel.
 
-# ── 10. CONVERT QUARTER BACK TO STRING FOR CSV ──────────────────────
-# Period objects don't save nicely to CSV, so we convert to strings
-# like "2022Q1" before saving.
+if os.path.exists(VACANCY_FILE):
+    print(f"\nLoading vacancy data from {VACANCY_FILE}...")
+    vacancy = pd.read_csv(VACANCY_FILE)
 
-panel["quarter"] = panel["quarter"].astype(str)
+    # Standardise suburb names to lowercase for matching
+    vacancy["suburb"] = vacancy["suburb"].str.strip().str.lower()
+    panel["suburb_lower"] = panel["suburb"].str.strip().str.lower()
 
-# ── 11. SAVE CLEANED PANEL ──────────────────────────────────────────
+    # Parse vacancy dates and create quarter column
+    vacancy["date"] = pd.to_datetime(vacancy["date"])
+    vacancy["quarter"] = vacancy["date"].dt.to_period("Q").astype(str)
+
+    # Average monthly vacancy to quarterly
+    vacancy_quarterly = (
+        vacancy
+        .groupby(["suburb", "quarter"], as_index=False)["vacancy_rate"]
+        .mean()
+    )
+
+    # Merge on suburb (lowercase) and quarter
+    panel = panel.merge(
+        vacancy_quarterly,
+        left_on=["suburb_lower", "quarter"],
+        right_on=["suburb", "quarter"],
+        how="left",
+        suffixes=("", "_vac"),
+    )
+
+    # Clean up duplicate columns from merge
+    if "suburb_vac" in panel.columns:
+        panel = panel.drop(columns=["suburb_vac"])
+    if "suburb_lower" in panel.columns:
+        panel = panel.drop(columns=["suburb_lower"])
+
+    # Create lagged vacancy rate
+    panel = panel.sort_values(["suburb", "date"]).reset_index(drop=True)
+    panel["lag_vacancy_rate"] = (
+        panel.groupby("suburb")["vacancy_rate"].shift(1)
+    )
+
+    print(f"  Vacancy data merged. Non-null vacancy values: {panel['vacancy_rate'].notna().sum()}")
+else:
+    print(f"\n  Note: No vacancy file found at {VACANCY_FILE}")
+    print("  The output will contain rent data only.")
+    print("  Add vacancy data later by saving it to that path and re-running.")
+
+# ── 12. SELECT FINAL COLUMNS AND SAVE ───────────────────────────────
+# Pick only the columns we need, in a clear order.
+
+keep_cols = ["region", "suburb", "quarter", "median_rent", "rent_growth", "lag_median_rent"]
+
+# Add vacancy columns if they exist
+if "vacancy_rate" in panel.columns:
+    keep_cols += ["vacancy_rate", "lag_vacancy_rate"]
+
+panel = panel[keep_cols]
+
+# Drop the date helper column and save
 panel.to_csv(OUTPUT_FILE, index=False)
 
-print(f"\nDone! Cleaned panel saved to {OUTPUT_FILE}")
-print(f"Final dataset: {panel.shape[0]} rows, {panel.shape[1]} columns")
-print(f"Columns: {list(panel.columns)}")
+print(f"\nDone! Saved to {OUTPUT_FILE}")
+print(f"  {panel.shape[0]} rows x {panel.shape[1]} columns")
+print(f"  {panel['suburb'].nunique()} suburbs")
+print(f"  {panel['quarter'].nunique()} quarters")
+print(f"  Columns: {list(panel.columns)}")

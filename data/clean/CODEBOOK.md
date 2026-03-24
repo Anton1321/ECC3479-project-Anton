@@ -1,27 +1,36 @@
 # Data Codebook — `suburb_quarter_panel.csv`
 
-This file describes the variables in the cleaned analysis-ready dataset
-produced by `code/01_clean_data.py`.
+This file describes the variables in the cleaned dataset produced by
+`code/01_clean_data.py`.
 
 ## Unit of Observation
 
-Each row is one **suburb in one quarter** (e.g. Bondi in 2022Q1).
+Each row is one **Melbourne suburb in one quarter** (e.g. Armadale in 2022Q1).
 
 ## Variables
 
 | Variable | Type | Description |
 |----------|------|-------------|
-| `suburb` | string | Suburb name, lowercase (e.g. "bondi", "st kilda") |
-| `city` | string | City — "sydney" or "melbourne" |
-| `quarter` | string | Year-quarter label (e.g. "2022Q1") |
-| `vacancy_rate` | float | Average rental vacancy rate for the quarter (%) |
-| `median_rent` | float | Average median weekly asking rent for the quarter (AUD) |
+| `region` | string | Melbourne sub-region (e.g. "Inner Melbourne", "Southern Melbourne") |
+| `suburb` | string | Suburb or suburb group name (e.g. "Armadale", "CBD-St Kilda Rd") |
+| `quarter` | string | Year-quarter label (e.g. "2018Q1", "2025Q3") |
+| `median_rent` | float | Moving annual median weekly rent in AUD, all property types combined |
 | `rent_growth` | float | Quarter-on-quarter percentage change in median rent (%). Null for the first quarter of each suburb. |
-| `lag_vacancy_rate` | float | Previous quarter's vacancy rate for the same suburb (%). Null for the first quarter of each suburb. This is the key explanatory variable. |
+| `lag_median_rent` | float | Previous quarter's median rent for the same suburb (AUD). Null for the first quarter of each suburb. |
+| `vacancy_rate`* | float | Average rental vacancy rate for the quarter (%). From SQM Research. |
+| `lag_vacancy_rate`* | float | Previous quarter's vacancy rate (%). The key explanatory variable. |
+
+*Only present if vacancy data has been merged in. See `data/raw/README.md`.
+
+## Coverage
+
+- **Geography:** 110 Melbourne metro suburbs across 9 regions
+- **Time period:** 2018Q1 to 2025Q3 (31 quarters)
+- **Total rows:** 3,410 suburb-quarter observations
 
 ## Notes
 
-- Vacancy rate and rent are averaged from monthly values within each quarter
-- `rent_growth` is calculated as: (rent_t - rent_{t-1}) / rent_{t-1} * 100
-- `lag_vacancy_rate` uses a one-quarter lag to test whether vacancy in quarter t-1 predicts rent growth in quarter t
-- The first observation for each suburb will have null values for `rent_growth` and `lag_vacancy_rate` (no prior quarter to compare against)
+- Median rent is a "moving annual" figure based on bonds lodged with the Victorian RTBA
+- `rent_growth` = (rent_t - rent_{t-1}) / rent_{t-1} * 100
+- Suburbs with "-" in the raw data (too few bonds) are treated as missing
+- The data source groups some adjacent suburbs together (e.g. "Albert Park-Middle Park-West St Kilda")
