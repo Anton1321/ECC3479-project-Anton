@@ -7,8 +7,8 @@ This script takes the raw Victorian Government rent data (a wide Excel file
 with quarters as columns) and reshapes it into a long, tidy panel dataset
 ready for analysis. It also calculates rent growth and a lagged rent column.
 
-Once vacancy rate data is obtained from SQM Research, the script merges
-that in too.
+If vacancy rate data from SQM Research is present in data/raw/, the script
+merges it in automatically. See data/raw/README.md for details on this data.
 
 HOW IT WORKS (step by step):
 1. Reads the VIC rent Excel file ("All properties" sheet)

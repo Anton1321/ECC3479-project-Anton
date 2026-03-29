@@ -8,9 +8,11 @@
 > What is the effect of a suburb's rental vacancy rate on subsequent rent
 > growth in Melbourne?
 
-This project uses a suburb-quarter panel for Melbourne (2018Q1–2025Q3)
-to estimate the relationship between rental vacancy rates and future rent
-changes, using panel fixed effects.
+This project constructs a suburb-quarter panel for Melbourne (2018Q1–2025Q3)
+to investigate the relationship between rental vacancy rates and future rent
+changes using panel fixed effects. The current dataset contains rent data
+only; vacancy rate data could not be obtained due to access restrictions
+(see [Limitations](#limitations)).
 
 ## Repository Structure
 
@@ -51,17 +53,7 @@ cd ECC3479-project-Anton
 pip install -r requirements.txt
 ```
 
-### Step 3: Obtain vacancy rate data (manual step)
-
-The rent data is already included in the repository. However, **vacancy
-rate data from SQM Research is not included** because it is a paid/proprietary
-source. See [`data/raw/README.md`](data/raw/README.md) for detailed
-instructions on how to obtain it.
-
-If you do not have SQM Research access, the cleaning script will still
-run and produce a panel with rent data only (no vacancy columns).
-
-### Step 4: Run the cleaning script
+### Step 3: Run the cleaning script
 
 ```bash
 python code/01_clean_data.py
@@ -71,9 +63,6 @@ This reads the raw Victorian rent data, reshapes it from wide to long
 format, filters to Melbourne suburbs from 2018 onwards, calculates rent
 growth, and saves the result to `data/clean/suburb_quarter_panel.csv`.
 
-If vacancy data is present in `data/raw/vacancy_rates.csv`, it will be
-merged in automatically.
-
 See [`data/clean/CODEBOOK.md`](data/clean/CODEBOOK.md) for a description
 of every variable in the output dataset.
 
@@ -81,7 +70,7 @@ of every variable in the output dataset.
 
 | Order | Script | Input | Output |
 |-------|--------|-------|--------|
-| 1 | `code/01_clean_data.py` | `data/raw/*.xlsx` (+ optional `vacancy_rates.csv`) | `data/clean/suburb_quarter_panel.csv` |
+| 1 | `code/01_clean_data.py` | `data/raw/*.xlsx` | `data/clean/suburb_quarter_panel.csv` |
 
 ## Software Requirements
 
@@ -95,4 +84,17 @@ of every variable in the output dataset.
 | Dataset | Source | Included? |
 |---------|--------|-----------|
 | Median rents by suburb (VIC) | Victorian Government DFFH, via data.vic.gov.au | Yes |
-| Rental vacancy rates | SQM Research | No — proprietary (see `data/raw/README.md`) |
+| Rental vacancy rates | SQM Research | No — see [Limitations](#limitations) |
+
+## Limitations
+
+The original research design requires suburb-level rental vacancy rate
+data from SQM Research as the key explanatory variable. This data is
+behind a paid subscription and could not be obtained in time for this
+submission despite contacting SQM for academic access.
+
+As a result, the current dataset contains only the **dependent variable
+side** of the analysis (rent levels and rent growth). The cleaning
+pipeline is built to automatically merge vacancy data if it becomes
+available in the future — see [`data/raw/README.md`](data/raw/README.md)
+for the expected format and download instructions.

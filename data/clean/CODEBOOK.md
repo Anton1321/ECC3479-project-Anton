@@ -17,10 +17,13 @@ Each row is one **Melbourne suburb in one quarter** (e.g. Armadale in 2022Q1).
 | `median_rent` | float | Moving annual median weekly rent in AUD, all property types combined |
 | `rent_growth` | float | Quarter-on-quarter percentage change in median rent (%). Null for the first quarter of each suburb. |
 | `lag_median_rent` | float | Previous quarter's median rent for the same suburb (AUD). Null for the first quarter of each suburb. |
-| `vacancy_rate`* | float | Average rental vacancy rate for the quarter (%). From SQM Research. |
-| `lag_vacancy_rate`* | float | Previous quarter's vacancy rate (%). The key explanatory variable. |
 
-*Only present if vacancy data has been merged in. See `data/raw/README.md`.
+
+**Note:** The research design also calls for suburb-level vacancy rate
+data from SQM Research (`vacancy_rate`, `lag_vacancy_rate`). This data
+could not be obtained due to access restrictions. The cleaning script
+will add these columns automatically if the data becomes available.
+See `data/raw/README.md` for details.
 
 ## Coverage
 
