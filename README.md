@@ -20,7 +20,8 @@ only; vacancy rate data could not be obtained due to access restrictions
 ├── README.md               ← this file
 ├── requirements.txt        ← Python packages needed
 ├── code/
-│   └── 01_clean_data.py    ← cleans raw data into analysis-ready panel
+│   ├── 01_clean_data.py    ← cleans raw data into analysis-ready panel
+│   └── 02_eda.ipynb        ← exploratory data analysis notebook
 ├── data/
 │   ├── raw/
 │   │   ├── README.md       ← data source details and download instructions
@@ -66,11 +67,22 @@ growth, and saves the result to `data/clean/suburb_quarter_panel.csv`.
 See [`data/clean/CODEBOOK.md`](data/clean/CODEBOOK.md) for a description
 of every variable in the output dataset.
 
+### Step 4: Open the EDA notebook
+
+```bash
+jupyter notebook code/02_eda.ipynb
+```
+
+The notebook contains exploratory data analysis with summary statistics,
+distributions, time trends, regional comparisons, correlations, and
+written interpretations. Figures are saved to `outputs/`.
+
 ## Script Execution Order
 
 | Order | Script | Input | Output |
 |-------|--------|-------|--------|
 | 1 | `code/01_clean_data.py` | `data/raw/*.xlsx` | `data/clean/suburb_quarter_panel.csv` |
+| 2 | `code/02_eda.ipynb` | `data/clean/suburb_quarter_panel.csv` | `outputs/*.png` |
 
 ## Software Requirements
 
@@ -78,6 +90,9 @@ of every variable in the output dataset.
 - Packages listed in `requirements.txt`:
   - `pandas` — data manipulation and cleaning
   - `openpyxl` — reading Excel files
+  - `matplotlib` — plotting
+  - `seaborn` — statistical visualisation
+  - `numpy` — numerical operations
 
 ## Data Sources
 
