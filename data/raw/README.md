@@ -12,11 +12,11 @@ broken down by dwelling type (1-bed flat, 2-bed house, etc.) and an
 "All properties" aggregate. Quarterly data from March 2000 to September 2025.
 Based on bonds lodged with the Residential Tenancies Bond Authority.
 
-## Not included — proprietary data
+## Not included - proprietary data
 
 ### Vacancy Rate Data
 **File name (if obtained):** `vacancy_rates.csv`
-**Source:** SQM Research — Residential Vacancy Rates
+**Source:** SQM Research - Residential Vacancy Rates
 **URL:** https://sqmresearch.com.au/graph_vacancy.php
 **Why not included:** SQM Research requires a paid subscription for
 suburb-level data downloads. Academic access was requested but not

@@ -1,4 +1,4 @@
-# ECC3479 Research Project — Vacancy Rates and Rent Growth
+# ECC3479 Research Project - Vacancy Rates and Rent Growth
 
 **Author:** Anton Kozlovsky (36194239)
 **Course:** ECC3479 Data and Evidence in Economics, Monash University
@@ -8,7 +8,7 @@
 > What is the effect of a suburb's rental vacancy rate on subsequent rent
 > growth in Melbourne?
 
-This project constructs a suburb-quarter panel for Melbourne (2018Q1–2025Q3)
+This project constructs a suburb-quarter panel for Melbourne (2018Q1-2025Q3)
 to investigate the relationship between rental vacancy rates and future rent
 changes using panel fixed effects. The current dataset contains rent data
 only; vacancy rate data could not be obtained due to access restrictions
@@ -88,18 +88,18 @@ written interpretations. Figures are saved to `outputs/`.
 
 - Python 3.9 or later
 - Packages listed in `requirements.txt`:
-  - `pandas` — data manipulation and cleaning
-  - `openpyxl` — reading Excel files
-  - `matplotlib` — plotting
-  - `seaborn` — statistical visualisation
-  - `numpy` — numerical operations
+  - `pandas` - data manipulation and cleaning
+  - `openpyxl` - reading Excel files
+  - `matplotlib` - plotting
+  - `seaborn` - statistical visualisation
+  - `numpy` - numerical operations
 
 ## Data Sources
 
 | Dataset | Source | Included? |
 |---------|--------|-----------|
 | Median rents by suburb (VIC) | Victorian Government DFFH, via data.vic.gov.au | Yes |
-| Rental vacancy rates | SQM Research | No — see [Limitations](#limitations) |
+| Rental vacancy rates | SQM Research | No - see [Limitations](#limitations) |
 
 ## Limitations
 
@@ -111,5 +111,5 @@ submission despite contacting SQM for academic access.
 As a result, the current dataset contains only the **dependent variable
 side** of the analysis (rent levels and rent growth). The cleaning
 pipeline is built to automatically merge vacancy data if it becomes
-available in the future — see [`data/raw/README.md`](data/raw/README.md)
+available in the future - see [`data/raw/README.md`](data/raw/README.md)
 for the expected format and download instructions.

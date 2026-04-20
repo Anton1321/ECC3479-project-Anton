@@ -1,4 +1,4 @@
-# Data Codebook — `suburb_quarter_panel.csv`
+# Data Codebook - `suburb_quarter_panel.csv`
 
 This file describes the variables in the cleaned dataset produced by
 `code/01_clean_data.py`.

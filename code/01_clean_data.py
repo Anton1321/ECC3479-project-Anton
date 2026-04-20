@@ -1,5 +1,5 @@
 """
-01_clean_data.py — ECC3479 Research Project
+01_clean_data.py - ECC3479 Research Project
 Author: Anton Kozlovsky (36194239)
 
 PURPOSE:
@@ -27,7 +27,7 @@ import os
 
 # ── 1. CONFIGURATION ──────────────────────────────────────────────────
 # These are the file paths. The rent file should already be in data/raw/.
-# The vacancy file is optional — the script works without it.
+# The vacancy file is optional - the script works without it.
 
 RENT_FILE = "data/raw/Moving annual median rent by suburb and town - September quarter 2025.xlsx"
 VACANCY_FILE = "data/raw/vacancy_rates.csv"  # Add this file when you have it
@@ -53,7 +53,7 @@ START_YEAR = 2018
 # ── 2. LOAD THE RAW RENT DATA ────────────────────────────────────────
 # The Excel file has a messy layout:
 #   Row 0: title row
-#   Row 1: quarter labels (e.g. "Mar 2000", "Jun 2000", ...) — each
+#   Row 1: quarter labels (e.g. "Mar 2000", "Jun 2000", ...) - each
 #          quarter appears TWICE (once for Count, once for Median)
 #   Row 2: "Count" or "Median" labels
 #   Row 3 onwards: actual data
