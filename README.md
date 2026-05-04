@@ -21,7 +21,8 @@ only; vacancy rate data could not be obtained due to access restrictions
 ├── requirements.txt        ← Python packages needed
 ├── code/
 │   ├── 01_clean_data.py    ← cleans raw data into analysis-ready panel
-│   └── 02_eda.ipynb        ← exploratory data analysis notebook
+│   ├── 02_eda.ipynb        ← exploratory data analysis notebook
+│   └── 03_analysis.ipynb   ← primary econometric analysis (FE regressions, DiD)
 ├── data/
 │   ├── raw/
 │   │   ├── README.md       ← data source details and download instructions
@@ -77,12 +78,23 @@ The notebook contains exploratory data analysis with summary statistics,
 distributions, time trends, regional comparisons, correlations, and
 written interpretations. Figures are saved to `outputs/`.
 
+### Step 5: Open the primary analysis notebook
+
+```bash
+jupyter notebook code/03_analysis.ipynb
+```
+
+The notebook estimates the main panel fixed-effects regressions, the
+DiD interaction around COVID-19, and the Inner Melbourne vs Rest of
+Melbourne heterogeneity split. Coefficient plots are saved to `outputs/`.
+
 ## Script Execution Order
 
 | Order | Script | Input | Output |
 |-------|--------|-------|--------|
 | 1 | `code/01_clean_data.py` | `data/raw/*.xlsx` | `data/clean/suburb_quarter_panel.csv` |
-| 2 | `code/02_eda.ipynb` | `data/clean/suburb_quarter_panel.csv` | `outputs/*.png` |
+| 2 | `code/02_eda.ipynb` | `data/clean/suburb_quarter_panel.csv` | `outputs/*.png` (EDA figures) |
+| 3 | `code/03_analysis.ipynb` | `data/clean/suburb_quarter_panel.csv` | `outputs/*.png` (regression figures) |
 
 ## Software Requirements
 
@@ -93,23 +105,32 @@ written interpretations. Figures are saved to `outputs/`.
   - `matplotlib` - plotting
   - `seaborn` - statistical visualisation
   - `numpy` - numerical operations
+  - `statsmodels` - OLS regression with robust standard errors
+  - `linearmodels` - panel data fixed-effects regressions
 
 ## Data Sources
 
 | Dataset | Source | Included? |
 |---------|--------|-----------|
 | Median rents by suburb (VIC) | Victorian Government DFFH, via data.vic.gov.au | Yes |
-| Rental vacancy rates | SQM Research | No - see [Limitations](#limitations) |
+| Bond-lodgement counts by suburb (VIC) | Victorian Government DFFH (same Excel file) | Yes - extracted as proxy for rental market activity |
+| Rental vacancy rates | SQM Research | No - paid subscription, see [Limitations](#limitations) |
 
 ## Limitations
 
-The original research design requires suburb-level rental vacancy rate
+The original research design called for suburb-level rental vacancy rate
 data from SQM Research as the key explanatory variable. This data is
-behind a paid subscription and could not be obtained in time for this
-submission despite contacting SQM for academic access.
+behind a paid subscription and could not be obtained.
 
-As a result, the current dataset contains only the **dependent variable
-side** of the analysis (rent levels and rent growth). The cleaning
-pipeline is built to automatically merge vacancy data if it becomes
-available in the future - see [`data/raw/README.md`](data/raw/README.md)
-for the expected format and download instructions.
+As a workaround, we use the **moving annual count of new bond lodgements
+per suburb** (`bond_count`) as a proxy for rental market activity. This is
+a free, suburb-level, quarterly measure available from the same DFFH
+spreadsheet that provides the rent figures - it captures how many new
+tenancies are starting in each suburb each quarter, which is the closest
+free analogue to a vacancy rate at this geographic granularity.
+
+This is not equivalent to a vacancy rate (which captures the share of
+rental stock currently empty), but it is economically interpretable as a
+turnover/activity measure and provides a defensible explanatory variable
+for the regression analysis. The cleaning pipeline still auto-merges SQM
+vacancy data if a `vacancy_rates.csv` is later added to `data/raw/`.

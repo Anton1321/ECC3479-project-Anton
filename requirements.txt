@@ -3,3 +3,5 @@ openpyxl
 matplotlib
 seaborn
 numpy
+statsmodels
+linearmodels

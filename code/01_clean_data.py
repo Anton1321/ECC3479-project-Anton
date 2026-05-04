@@ -5,24 +5,33 @@ Author: Anton Kozlovsky (36194239)
 PURPOSE:
 This script takes the raw Victorian Government rent data (a wide Excel file
 with quarters as columns) and reshapes it into a long, tidy panel dataset
-ready for analysis. It also calculates rent growth and a lagged rent column.
+ready for analysis. The DFFH file contains TWO numbers per quarter per
+suburb: the median rent AND the count of new bond lodgements (= number of
+new tenancies started that quarter). We extract both.
 
-If vacancy rate data from SQM Research is present in data/raw/, the script
-merges it in automatically. See data/raw/README.md for details on this data.
+The bond-lodgement count is used as a proxy for rental market turnover
+(how many new tenancies are starting). It is the closest free, suburb-level,
+quarterly measure of rental market activity available - true vacancy rate
+data (e.g. from SQM Research) is paid and could not be obtained.
+
+If vacancy rate data from SQM Research is later added (as a CSV in
+data/raw/vacancy_rates.csv), the script merges it in automatically.
 
 HOW IT WORKS (step by step):
 1. Reads the VIC rent Excel file ("All properties" sheet)
 2. Parses the messy header rows to extract quarter labels
 3. Keeps only Melbourne suburbs (drops regional VIC and "Group Total" rows)
 4. Reshapes from wide format (one column per quarter) to long format
-   (one row per suburb per quarter)
+   (one row per suburb per quarter), keeping BOTH median rent and bond count
 5. Calculates quarter-on-quarter rent growth
-6. Creates a lagged rent column (previous quarter's median rent)
-7. If vacancy data exists, merges it in and creates lagged vacancy rate
-8. Saves the final panel to data/clean/suburb_quarter_panel.csv
+6. Creates lagged columns (previous quarter's rent and bond count)
+7. Computes log(bond_count) for use as an explanatory variable
+8. If vacancy data exists, merges it in and creates lagged vacancy rate
+9. Saves the final panel to data/clean/suburb_quarter_panel.csv
 """
 
 import pandas as pd
+import numpy as np
 import os
 
 # ── 1. CONFIGURATION ──────────────────────────────────────────────────
@@ -69,24 +78,32 @@ print(f"  Raw file: {raw.shape[0]} rows x {raw.shape[1]} columns")
 
 # ── 3. PARSE THE QUARTER LABELS ─────────────────────────────────────
 # Row 1 has the quarter names (e.g. "Mar 2000") and row 2 says whether
-# that column is "Count" or "Median". We want only the "Median" columns.
+# that column is "Count" or "Median". We want BOTH:
+#   - "Median" = median weekly rent in that suburb-quarter
+#   - "Count"  = number of new bond lodgements (= new tenancies) that quarter
 #
-# We loop through columns 2 onwards and build a list of (quarter, type) pairs.
+# We loop through columns 2 onwards and build TWO lists:
+# one for the median columns and one for the count columns.
 
 quarter_labels = raw.iloc[1, 2:]   # e.g. "Mar 2000", "Mar 2000", "Jun 2000", ...
 col_types = raw.iloc[2, 2:]        # e.g. "Count", "Median", "Count", "Median", ...
 
-# Find which column indices hold "Median" values
-median_cols = []        # column index in the original DataFrame
-median_quarters = []    # the quarter label for that column
+median_cols = []        # column indices that hold "Median" (rent) values
+median_quarters = []    # the quarter label for each median column
+count_cols = []         # column indices that hold "Count" (bond lodgement) values
+count_quarters = []     # the quarter label for each count column
 
 for i, (quarter, col_type) in enumerate(zip(quarter_labels, col_types)):
+    col_idx = i + 2  # +2 because we skipped columns 0 and 1
     if col_type == "Median":
-        col_idx = i + 2  # +2 because we skipped columns 0 and 1
         median_cols.append(col_idx)
         median_quarters.append(quarter)
+    elif col_type == "Count":
+        count_cols.append(col_idx)
+        count_quarters.append(quarter)
 
 print(f"  Found {len(median_cols)} quarters of median rent data")
+print(f"  Found {len(count_cols)} quarters of bond-lodgement count data")
 print(f"  Date range: {median_quarters[0]} to {median_quarters[-1]}")
 
 # ── 4. EXTRACT SUBURB DATA ──────────────────────────────────────────
@@ -118,14 +135,26 @@ print(f"  Melbourne suburbs: {data.shape[0]}")
 # We want one row per suburb per quarter (long format).
 # Think of it like unpivoting a pivot table in Excel.
 #
-# We'll build a list of small DataFrames (one per quarter) and stack them.
+# We need BOTH the median rent AND the bond-lodgement count for each
+# suburb-quarter. Median and Count columns alternate in the spreadsheet,
+# and we already collected their column indices in step 3.
+#
+# We'll build a list of small DataFrames (one per quarter) that includes
+# both the median rent and the bond count, then stack them.
+
+# Pair up median and count columns by quarter (they should align since
+# quarters appear in the same order for both lists)
+assert median_quarters == count_quarters, (
+    "Median and Count columns are not aligned by quarter - check the file format"
+)
 
 rows = []
-for col_idx, quarter_label in zip(median_cols, median_quarters):
-    # For each quarter, grab the suburb info + that quarter's median rent
+for med_col, cnt_col, quarter_label in zip(median_cols, count_cols, median_quarters):
+    # For each quarter, grab the suburb info + that quarter's rent + count
     temp = data[["region", "suburb"]].copy()
     temp["quarter_label"] = quarter_label
-    temp["median_rent"] = data[col_idx]
+    temp["median_rent"] = data[med_col]
+    temp["bond_count"] = data[cnt_col]
     rows.append(temp)
 
 # pd.concat stacks all the small DataFrames on top of each other
@@ -143,26 +172,38 @@ panel["year"] = panel["date"].dt.year
 # ── 8. FILTER TO 2018 ONWARDS ───────────────────────────────────────
 panel = panel[panel["year"] >= START_YEAR]
 
-# ── 9. CLEAN UP THE MEDIAN RENT VALUES ──────────────────────────────
+# ── 9. CLEAN UP THE NUMERIC VALUES ──────────────────────────────────
 # Some cells have "-" meaning too few observations. We replace these
 # with NaN (Not a Number) which means "missing" in pandas.
-# Then we convert to float so we can do math on the column.
+# Then we convert to float so we can do math on the columns.
 
 panel["median_rent"] = pd.to_numeric(panel["median_rent"], errors="coerce")
+panel["bond_count"] = pd.to_numeric(panel["bond_count"], errors="coerce")
 
-# ── 10. SORT AND CALCULATE RENT GROWTH ──────────────────────────────
+# ── 10. SORT AND CALCULATE DERIVED VARIABLES ────────────────────────
 # Sort by suburb then date, so each suburb's data runs chronologically.
 panel = panel.sort_values(["suburb", "date"]).reset_index(drop=True)
 
-# pct_change() calculates: (this_quarter - last_quarter) / last_quarter
-# We multiply by 100 to get a percentage (e.g. 2.5 means 2.5% growth).
+# Quarter-on-quarter rent growth (%): (this_q - last_q) / last_q * 100.
 # groupby("suburb") ensures we only compare within the same suburb.
 panel["rent_growth"] = (
     panel.groupby("suburb")["median_rent"].pct_change() * 100
 )
 
-# Also create a lagged rent column (last quarter's rent).
+# Lagged rent column (last quarter's rent).
 panel["lag_median_rent"] = panel.groupby("suburb")["median_rent"].shift(1)
+
+# Lagged bond count (last quarter's number of new bond lodgements).
+panel["lag_bond_count"] = panel.groupby("suburb")["bond_count"].shift(1)
+
+# log(bond_count) - useful for regression because:
+#   1. Bond counts are right-skewed (many small suburbs, few large ones)
+#   2. With FE, the coefficient on log(bond_count) becomes a semi-elasticity:
+#      a 1% increase in bond lodgements is associated with a beta-percentage
+#      point change in rent growth.
+# We add 1 before taking the log to handle suburb-quarters with zero bonds.
+panel["log_bond_count"] = np.log(panel["bond_count"] + 1)
+panel["lag_log_bond_count"] = panel.groupby("suburb")["log_bond_count"].shift(1)
 
 # ── 11. MERGE VACANCY DATA (if available) ───────────────────────────
 # If you've downloaded vacancy data from SQM Research and saved it as
@@ -217,7 +258,11 @@ else:
 # ── 12. SELECT FINAL COLUMNS AND SAVE ───────────────────────────────
 # Pick only the columns we need, in a clear order.
 
-keep_cols = ["region", "suburb", "quarter", "median_rent", "rent_growth", "lag_median_rent"]
+keep_cols = [
+    "region", "suburb", "quarter",
+    "median_rent", "rent_growth", "lag_median_rent",
+    "bond_count", "lag_bond_count", "log_bond_count", "lag_log_bond_count",
+]
 
 # Add vacancy columns if they exist
 if "vacancy_rate" in panel.columns:
