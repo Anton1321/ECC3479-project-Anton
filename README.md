@@ -8,11 +8,35 @@
 > What is the effect of a suburb's rental vacancy rate on subsequent rent
 > growth in Melbourne?
 
-This project constructs a suburb-quarter panel for Melbourne (2018Q1-2025Q3)
-to investigate the relationship between rental vacancy rates and future rent
-changes using panel fixed effects. The current dataset contains rent data
-only; vacancy rate data could not be obtained due to access restrictions
-(see [Limitations](#limitations)).
+This project constructs a suburb-quarter panel for Melbourne (2018Q1-2025Q3,
+110 suburbs x 31 quarters = 3,410 observations) to investigate the
+relationship between rental market conditions and future rent changes using
+panel fixed-effects regression.
+
+## TL;DR - The Data Dilemma and the Workaround
+
+The original research design called for **suburb-level vacancy rate data**
+(SQM Research) as the key explanatory variable. We could not obtain it:
+
+- **SQM Research:** quoted ~$5,000 AUD for the data (commercial pricing)
+- **Monash Library:** does not subscribe to CoreLogic, RP Data, Cotality, or
+  any equivalent residential property database
+- **Free academic-access channels** (RoZetta Institute, etc.): did not
+  return data in time for this submission
+
+**Workaround:** We use the **moving annual count of new bond lodgements per
+suburb** (`bond_count`) as a proxy for rental market activity. This variable
+is extracted from the same DFFH spreadsheet that supplies the rent figures
+(it was previously discarded by the cleaning script). It is not equivalent
+to a vacancy rate, but it is the closest free, suburb-level, quarterly
+measure of rental market activity available, and it is economically
+interpretable as a turnover/activity measure.
+
+**Consequence for the analysis:** The primary analysis (`code/03_analysis.ipynb`)
+explicitly declares its ambition as **descriptive** rather than causal, and
+the Threats section discusses the measurement issue (turnover vs vacancy)
+in detail. See [Limitations](#limitations) at the bottom of this README and
+Section 6 of `code/03_analysis.ipynb` for the full discussion.
 
 ## Repository Structure
 
