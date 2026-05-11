@@ -46,7 +46,8 @@ Section 6 of `code/03_analysis.ipynb` for the full discussion.
 ├── code/
 │   ├── 01_clean_data.py    ← cleans raw data into analysis-ready panel
 │   ├── 02_eda.ipynb        ← exploratory data analysis notebook
-│   └── 03_analysis.ipynb   ← primary econometric analysis (FE regressions, DiD)
+│   ├── 03_analysis.ipynb   ← primary econometric analysis (FE regressions, DiD)
+│   └── 04_robustness.ipynb ← robustness checks notebook (alternative SEs, samples, controls, placebo)
 ├── data/
 │   ├── raw/
 │   │   ├── README.md       ← data source details and download instructions
@@ -112,6 +113,19 @@ The notebook estimates the main panel fixed-effects regressions, the
 DiD interaction around COVID-19, and the Inner Melbourne vs Rest of
 Melbourne heterogeneity split. Coefficient plots are saved to `outputs/`.
 
+### Step 6: Open the robustness checks notebook
+
+```bash
+jupyter notebook code/04_robustness.ipynb
+```
+
+The notebook stress-tests the main result from Step 5 against six
+defensible variations: alternative standard error estimators, dropping
+the rent control, trimming the top/bottom 1% of growth, dropping the
+COVID era, and a wrong-period placebo on the pre-2018 data (2000-2017,
+which is loaded inline from the same DFFH file). Produces a side-by-side
+robustness table and a coefficient plot.
+
 ## Script Execution Order
 
 | Order | Script | Input | Output |
@@ -119,6 +133,7 @@ Melbourne heterogeneity split. Coefficient plots are saved to `outputs/`.
 | 1 | `code/01_clean_data.py` | `data/raw/*.xlsx` | `data/clean/suburb_quarter_panel.csv` |
 | 2 | `code/02_eda.ipynb` | `data/clean/suburb_quarter_panel.csv` | `outputs/*.png` (EDA figures) |
 | 3 | `code/03_analysis.ipynb` | `data/clean/suburb_quarter_panel.csv` | `outputs/*.png` (regression figures) |
+| 4 | `code/04_robustness.ipynb` | `data/clean/suburb_quarter_panel.csv` + `data/raw/*.xlsx` (for placebo) | `outputs/robustness_coefficient_plot.png` |
 
 ## Software Requirements
 
