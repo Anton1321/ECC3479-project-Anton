@@ -5,3 +5,5 @@ seaborn
 numpy
 statsmodels
 linearmodels
+markdown
+xhtml2pdf
