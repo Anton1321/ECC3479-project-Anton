@@ -152,7 +152,9 @@ needed if the markdown source is edited.
 
 ## How the PDF Maps to the Code
 
-The rubric requires every table and figure in the PDF to be traceable to the script that produces it. The full mapping:
+The rubric requires every table, every figure, and **every number** in the PDF to be traceable to the script that produces it. The full mapping:
+
+### Tables and figures
 
 | PDF element | Produced by |
 |---|---|
@@ -165,7 +167,24 @@ The rubric requires every table and figure in the PDF to be traceable to the scr
 | Figure 2 (Robustness coefficient plot) | `code/04_robustness.ipynb` Section 6 → `outputs/robustness_coefficient_plot.png` |
 | The PDF itself | `docs/build_report.py` reads `docs/final_report.md` and the two output PNGs |
 
-Every numerical value in the PDF (point estimates, standard errors, sample sizes, summary statistics) can be reproduced by running scripts 1-4 in order and inspecting the indicated section.
+### Numbers cited in body text
+
+Numbers that appear in the PDF body but are derivations from the main results (percentiles, economic-significance calculations, SE ratios, sample-restriction counts) are explicitly printed in dedicated reproducibility cells at the end of each notebook:
+
+| PDF citation | Produced by |
+|---|---|
+| 25th / 75th percentile of `lag_log_bond_count` (6.83, 7.62) | `code/03_analysis.ipynb` **Section 8** |
+| Economic-significance magnitude (IQR × β ≈ 1.48 pp) | `code/03_analysis.ipynb` **Section 8** |
+| Magnitude as fraction of SD (0.63) | `code/03_analysis.ipynb` **Section 8** |
+| Sample mean (1.16) and SD (2.33) of rent_growth | `code/03_analysis.ipynb` **Section 8** + Section 1 |
+| Semi-elasticity: 1% turnover → 0.019 pp; doubling → 1.3 pp | `code/03_analysis.ipynb` **Section 8** |
+| C3 cluster count (9 regions) | `code/04_robustness.ipynb` **Section 9** |
+| C5 dropped 66 observations | `code/04_robustness.ipynb` **Section 9** |
+| C6 dropped 770 observations | `code/04_robustness.ipynb` **Section 9** |
+| HC3 SE is "about 20% smaller" than cluster SE | `code/04_robustness.ipynb` **Section 9** |
+| Placebo sample size (7,802 suburb-quarters) | `code/04_robustness.ipynb` **Section 9** |
+
+A marker can verify every claim in the PDF by running scripts 1-4 in order and scrolling to the indicated section. The reproducibility cells in Sections 8 (analysis) and 9 (robustness) exist for exactly this purpose - to make the marker's verification job as low-friction as possible.
 
 ## Software Requirements
 
