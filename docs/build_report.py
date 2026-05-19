@@ -77,6 +77,7 @@ table {
     margin: 0.8em auto;
     font-size: 7.5pt;
     width: 100%;
+    table-layout: fixed;
     page-break-inside: avoid;
 }
 th, td {

@@ -84,19 +84,20 @@ where *i* indexes the suburb (110 Melbourne suburbs), *t* indexes the quarter (3
 **Table 2: Main results - bond turnover and rent growth in Melbourne suburbs**
 *Dependent variable: quarter-on-quarter rent growth (%); standard errors in parentheses*
 
-| | (1) Pooled OLS | (2) +Suburb FE | (3) TWFE | (4) TWFE + log(rent) |
-|---|---|---|---|---|
-| log(lag bond count) | -0.050 | -0.790** | +0.291 | **-1.875***  |
-| | (0.081) | (0.359) | (0.341) | (0.439) |
-| log(lag median rent) | | | | -11.998***  |
-| | | | | (0.790) |
-| Suburb FE | No | Yes | Yes | Yes |
-| Quarter FE | No | No | Yes | Yes |
-| SE type | HC3 | Cluster (suburb) | Cluster (suburb) | Cluster (suburb) |
-| N (suburb-quarters) | 3,300 | 3,300 | 3,300 | 3,300 |
-| N suburbs | 110 | 110 | 110 | 110 |
+<table>
+<tr><th width="28%"></th><th width="18%">(1) Pooled OLS</th><th width="18%">(2) +Suburb FE</th><th width="18%">(3) TWFE</th><th width="18%">(4) TWFE + log(rent)</th></tr>
+<tr><td width="28%">log(lag bond count)</td><td width="18%">-0.050</td><td width="18%">-0.790**</td><td width="18%">+0.291</td><td width="18%"><b>-1.875***</b></td></tr>
+<tr><td width="28%"></td><td width="18%">(0.081)</td><td width="18%">(0.359)</td><td width="18%">(0.341)</td><td width="18%"><b>(0.439)</b></td></tr>
+<tr><td width="28%">log(lag median rent)</td><td width="18%"></td><td width="18%"></td><td width="18%"></td><td width="18%">-11.998***</td></tr>
+<tr><td width="28%"></td><td width="18%"></td><td width="18%"></td><td width="18%"></td><td width="18%">(0.790)</td></tr>
+<tr><td width="28%">Suburb FE</td><td width="18%">No</td><td width="18%">Yes</td><td width="18%">Yes</td><td width="18%">Yes</td></tr>
+<tr><td width="28%">Quarter FE</td><td width="18%">No</td><td width="18%">No</td><td width="18%">Yes</td><td width="18%">Yes</td></tr>
+<tr><td width="28%">SE type</td><td width="18%">HC3</td><td width="18%">Cluster (suburb)</td><td width="18%">Cluster (suburb)</td><td width="18%">Cluster (suburb)</td></tr>
+<tr><td width="28%">N (suburb-quarters)</td><td width="18%">3,300</td><td width="18%">3,300</td><td width="18%">3,300</td><td width="18%">3,300</td></tr>
+<tr><td width="28%">N suburbs</td><td width="18%">110</td><td width="18%">110</td><td width="18%">110</td><td width="18%">110</td></tr>
+</table>
 
-*\* p<0.10, ** p<0.05, \*** p<0.01. Source: `code/03_analysis.ipynb` §3.*
+*\* p<0.10, ** p<0.05, \*** p<0.01. Source: `code/03_analysis.ipynb` Section 3.*
 
 **Reading the table column by column.** Column 1 (pooled OLS) returns a coefficient essentially indistinguishable from zero (-0.05, t = -0.6). Across the entire pooled sample of 3,300 suburb-quarters, log turnover and rent growth do not move together in any obvious way. Adding suburb fixed effects in column 2 changes the picture: within a given suburb, quarters of higher turnover are associated with about 0.79 percentage points lower rent growth (t = -2.2). Adding quarter fixed effects in column 3 reverses the sign and removes statistical significance - common time variation was doing most of the work in column 2. The preferred column 4 adds the lagged log rent control. The turnover coefficient becomes sharply negative (-1.875, t = -4.27) and the rent-level coefficient is large and very precisely estimated (-12.0, t = -15.2), indicating strong mean reversion: suburbs that already have high rents have systematically lower growth ahead.
 
@@ -125,17 +126,18 @@ The main result was stress-tested through six defensible variations of the prefe
 **Table 4: Robustness of the turnover coefficient**
 *Dependent variable: quarter-on-quarter rent growth (%); standard errors in parentheses*
 
-| | (C1) Main | (C2) HC3 only | (C3) Cluster=region | (C4) No rent ctrl | (C5) Trim 1%/99% | (C6) Drop COVID | (C7) Placebo pre-2018 |
-|---|---|---|---|---|---|---|---|
-| log(lag bond count) | -1.875*** | -1.875*** | -1.875*** | +0.291 | -1.891*** | -1.688*** | -0.630*** |
-| | (0.439) | (0.351) | (0.541) | (0.345) | (0.397) | (0.449) | (0.144) |
-| log(lag median rent) | -11.998*** | -11.998*** | -11.998*** | - | -10.414*** | -14.959*** | -8.036*** |
-| | (0.790) | (1.094) | (1.008) | - | (0.767) | (1.379) | (0.725) |
-| Suburb FE | Yes | Yes | Yes | Yes | Yes | Yes | Yes |
-| Quarter FE | Yes | Yes | Yes | Yes | Yes | Yes | Yes |
-| SE type | Cluster (suburb) | HC3 | Cluster (region) | Cluster (suburb) | Cluster (suburb) | Cluster (suburb) | Cluster (suburb) |
-| Sample | 2018-2025 | 2018-2025 | 2018-2025 | 2018-2025 | 2018-2025 trim | 2018-2025 ex-COVID | 2000-2017 |
-| N (suburb-quarters) | 3,300 | 3,300 | 3,300 | 3,300 | 3,234 | 2,530 | 7,802 |
+<table>
+<tr><th width="18%"></th><th width="11%">(C1) Main</th><th width="12%">(C2) HC3 only</th><th width="11%">(C3) Cluster=region</th><th width="11%">(C4) No rent ctrl</th><th width="12%">(C5) Trim 1%/99%</th><th width="12%">(C6) Drop COVID</th><th width="13%">(C7) Placebo pre-2018</th></tr>
+<tr><td width="18%">log(lag bond count)</td><td width="11%"><b>-1.875***</b></td><td width="12%">-1.875***</td><td width="11%">-1.875***</td><td width="11%">+0.291</td><td width="12%">-1.891***</td><td width="12%">-1.688***</td><td width="13%">-0.630***</td></tr>
+<tr><td width="18%"></td><td width="11%"><b>(0.439)</b></td><td width="12%">(0.351)</td><td width="11%">(0.541)</td><td width="11%">(0.345)</td><td width="12%">(0.397)</td><td width="12%">(0.449)</td><td width="13%">(0.144)</td></tr>
+<tr><td width="18%">log(lag median rent)</td><td width="11%">-11.998***</td><td width="12%">-11.998***</td><td width="11%">-11.998***</td><td width="11%">-</td><td width="12%">-10.414***</td><td width="12%">-14.959***</td><td width="13%">-8.036***</td></tr>
+<tr><td width="18%"></td><td width="11%">(0.790)</td><td width="12%">(1.094)</td><td width="11%">(1.008)</td><td width="11%">-</td><td width="12%">(0.767)</td><td width="12%">(1.379)</td><td width="13%">(0.725)</td></tr>
+<tr><td width="18%">Suburb FE</td><td width="11%">Yes</td><td width="12%">Yes</td><td width="11%">Yes</td><td width="11%">Yes</td><td width="12%">Yes</td><td width="12%">Yes</td><td width="13%">Yes</td></tr>
+<tr><td width="18%">Quarter FE</td><td width="11%">Yes</td><td width="12%">Yes</td><td width="11%">Yes</td><td width="11%">Yes</td><td width="12%">Yes</td><td width="12%">Yes</td><td width="13%">Yes</td></tr>
+<tr><td width="18%">SE type</td><td width="11%">Cluster (suburb)</td><td width="12%">HC3</td><td width="11%">Cluster (region)</td><td width="11%">Cluster (suburb)</td><td width="12%">Cluster (suburb)</td><td width="12%">Cluster (suburb)</td><td width="13%">Cluster (suburb)</td></tr>
+<tr><td width="18%">Sample</td><td width="11%">2018-2025</td><td width="12%">2018-2025</td><td width="11%">2018-2025</td><td width="11%">2018-2025</td><td width="12%">2018-2025 trim</td><td width="12%">2018-2025 ex-COVID</td><td width="13%">2000-2017</td></tr>
+<tr><td width="18%">N (suburb-quarters)</td><td width="11%">3,300</td><td width="12%">3,300</td><td width="11%">3,300</td><td width="11%">3,300</td><td width="12%">3,234</td><td width="12%">2,530</td><td width="13%">7,802</td></tr>
+</table>
 
 *\* p<0.10, ** p<0.05, \*** p<0.01. Source: `code/04_robustness.ipynb` §5. (C2)-(C3) vary the SE estimator. (C4) drops the rent control. (C5) trims the top and bottom 1% of rent growth. (C6) drops 2020 Q2 - 2021 Q4 (COVID era). (C7) is a wrong-period placebo on the pre-2018 era of the same DFFH panel.*
 
