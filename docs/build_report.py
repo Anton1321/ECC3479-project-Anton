@@ -25,19 +25,19 @@ PDF_PATH = HERE / "final_report.pdf"
 CSS = """
 @page {
     size: A4;
-    margin: 2.0cm 2.0cm 2.0cm 2.0cm;
+    margin: 2.2cm 2.2cm 2.2cm 2.2cm;
     @frame footer {
         -pdf-frame-content: footerContent;
-        bottom: 0.8cm;
-        margin-left: 2.0cm;
-        margin-right: 2.0cm;
+        bottom: 1.0cm;
+        margin-left: 2.2cm;
+        margin-right: 2.2cm;
         height: 0.8cm;
     }
 }
 body {
     font-family: Helvetica, Arial, sans-serif;
-    font-size: 10.5pt;
-    line-height: 1.40;
+    font-size: 11pt;
+    line-height: 1.45;
     color: #1a1a1a;
 }
 h1 {
