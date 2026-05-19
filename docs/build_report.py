@@ -77,6 +77,7 @@ table {
     margin: 0.8em auto;
     font-size: 7.5pt;
     width: 100%;
+    page-break-inside: avoid;
 }
 th, td {
     border: 1px solid #888;
@@ -86,6 +87,12 @@ th, td {
 th {
     background-color: #e8e8e8;
     font-weight: bold;
+}
+img {
+    max-width: 100%;
+    margin: 0.5em auto;
+    display: block;
+    -pdf-keep-with-next: true;
 }
 ul, ol {
     margin-top: 0.3em;
