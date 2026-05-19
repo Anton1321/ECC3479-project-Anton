@@ -25,44 +25,44 @@ PDF_PATH = HERE / "final_report.pdf"
 CSS = """
 @page {
     size: A4;
-    margin: 2.2cm 2.0cm 2.4cm 2.0cm;
+    margin: 2.0cm 2.0cm 2.0cm 2.0cm;
     @frame footer {
         -pdf-frame-content: footerContent;
-        bottom: 1cm;
-        margin-left: 2cm;
-        margin-right: 2cm;
-        height: 1cm;
+        bottom: 0.8cm;
+        margin-left: 2.0cm;
+        margin-right: 2.0cm;
+        height: 0.8cm;
     }
 }
 body {
     font-family: Helvetica, Arial, sans-serif;
     font-size: 10.5pt;
-    line-height: 1.45;
+    line-height: 1.40;
     color: #1a1a1a;
 }
 h1 {
-    font-size: 18pt;
+    font-size: 16pt;
     margin-bottom: 0.2em;
     margin-top: 0;
     color: #1a1a1a;
 }
 h2 {
-    font-size: 13pt;
-    margin-top: 1.2em;
-    margin-bottom: 0.4em;
+    font-size: 12.5pt;
+    margin-top: 1.0em;
+    margin-bottom: 0.3em;
     color: #1a1a1a;
     border-bottom: 1px solid #888;
     padding-bottom: 2px;
 }
 h3 {
-    font-size: 11pt;
-    margin-top: 0.9em;
-    margin-bottom: 0.3em;
+    font-size: 10.5pt;
+    margin-top: 0.7em;
+    margin-bottom: 0.25em;
     color: #1a1a1a;
 }
 p {
     margin-top: 0;
-    margin-bottom: 0.6em;
+    margin-bottom: 0.5em;
     text-align: justify;
 }
 hr {
